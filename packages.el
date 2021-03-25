@@ -14,6 +14,12 @@
 (package! ace-jump-mode)
 (package! key-chord)
 (package! switch-buffer-functions)
+
+(package! dap-mode)
+(package! lsp-mode)
+(package! lsp-ui)
+(package! lsp-java)
+
 (package! org-appear
   :recipe (:host github
            :repo "awth13/org-appear"))

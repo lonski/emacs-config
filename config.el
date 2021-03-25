@@ -59,6 +59,12 @@
  '(initial-frame-alist (quote ((fullscreen . maximized)))))
 
 ;;
+;;Global keybindings
+;;
+(evil-define-key* 'normal 'global
+  (kbd "C-/") 'comment-line)
+
+;;
 ;; Org config
 ;;
 (setq org-directory "~/Documents/org")
@@ -101,12 +107,16 @@
 ;; Robe - ruby completion server
 ;; Activate ruby using rvm, before starting the server
 (advice-add 'inf-ruby-console-auto :before #'rvm-activate-corresponding-ruby)
+(add-hook 'ruby-mode-hook
+    '(lambda ()
+        (evil-define-key* 'normal ruby-mode-map
+          (kbd "SPC v s") 'rspec-verify-single
+          (kbd "SPC v a") 'rspec-verify-all)))
 
 ;;
 ;; Treemacs config
 ;;
 (use-package! treemacs
-  :ensure t
   :defer t
   :config
   (progn
@@ -170,3 +180,60 @@
       (erase-buffer)
       (insert document)
       (goto-char (point-min)))))
+
+;;
+;; Java config
+;;
+(use-package lsp-mode
+  :init
+  (setq lsp-prefer-flymake nil)
+  :demand t
+  :config
+  (setq lsp-enable-file-watchers nil))
+
+(use-package lsp-ui
+  :config
+  (setq lsp-ui-doc-enable nil
+        lsp-ui-sideline-enable nil
+        lsp-ui-flycheck-enable t)
+  (define-key lsp-ui-mode-map
+    [remap xref-find-definitions] #'lsp-ui-peek-find-definitions)
+  (define-key lsp-ui-mode-map
+    [remap xref-find-references] #'lsp-ui-peek-find-references)
+  :after lsp-mode)
+
+(use-package dap-mode
+  :config
+  (message "Dap loaded")
+  (dap-mode t)
+  (dap-ui-mode t))
+
+(use-package lsp-java
+  :init
+  (defun sps/java-mode-config()
+    (evil-define-key* 'normal java-mode-map
+      (kbd "SPC c I") 'lsp-java-add-import
+      (kbd "SPC v s") 'dap-java-run-test-method
+      (kbd "SPC v a") 'dap-java-run-test-class)
+    (lsp))
+  :config
+  ;; Enable dap-java (debugger)
+  (require 'dap-java)
+  ;; Configure Lombok
+  (setq lsp-java-vmargs
+      (list "-noverify"
+            "-Xmx2G"
+            "-XX:+UseG1GC"
+            "-XX:+UseStringDeduplication"
+            "-javaagent:/home/michallonski/.java_resources/lombok.jar")
+      lsp-file-watch-ignored-directories
+      '(".idea" "node_modules" ".git" "build" "tmp" "public")
+      lsp-java-import-order '["" "java" "javax" "#"]
+      ;; Don't organize imports on save
+      lsp-java-save-action-organize-imports nil
+      ;; Formatter profile
+      lsp-java-format-settings-url "file:///home/michallonski/.java_resources/EclipseCodeStyle.xml" )
+  :demand t
+  :hook
+  (java-mode . sps/java-mode-config)
+  :after (lsp-mode dap-mode))
