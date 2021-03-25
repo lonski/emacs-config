@@ -13,6 +13,10 @@
 (package! web-mode)
 (package! ace-jump-mode)
 (package! key-chord)
+(package! switch-buffer-functions)
+(package! org-appear
+  :recipe (:host github
+           :repo "awth13/org-appear"))
 ;; To install a package directly from a remote git repo, you must specify a
 ;; `:recipe'. You'll find documentation on what `:recipe' accepts here:
 ;; https://github.com/raxod502/straight.el#the-recipe-format

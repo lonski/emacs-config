@@ -58,15 +58,30 @@
 (custom-set-variables
  '(initial-frame-alist (quote ((fullscreen . maximized)))))
 
+;;
 ;; Org config
+;;
 (setq org-directory "~/Documents/org")
 (evil-define-key* 'normal 'global
   (kbd "SPC n e") 'org-babel-execute-src-block)
+(add-hook! org-mode :append #'org-appear-mode)
+(after! org (setq org-hide-emphasis-markers t))
+;; Org templates
+(after! (org-capture)
+  (setq org-capture-templates
+        '(("t" "Todo" entry (file+headline (lambda ()(concat org-directory "/todo.org")) "Tasks")
+           "* TODO %?\n  %i\n  %a", :prepend t)
+          ("n" "Note" entry (file (lambda ()(concat org-directory "/notes.org")))
+           "* %?"))))
 
+;;
 ;; Use rvm for rspec
+;;
 (setq rspec-use-rvm t)
 
+;;
 ;; Configure Centaur Tabs
+;;
 (use-package! centaur-tabs
   :demand
   :init
@@ -78,22 +93,29 @@
         centaur-tabs-set-bar 'under
         x-underline-at-descent-line t
         centaur-tabs-set-modified-marker t))
+(after! centaur-tabs
+  (evil-define-key* 'normal 'global
+    (kbd "C-x 9") 'centaur-tabs--kill-this-buffer-dont-ask))
 
+;;
 ;; Robe - ruby completion server
 ;; Activate ruby using rvm, before starting the server
 (advice-add 'inf-ruby-console-auto :before #'rvm-activate-corresponding-ruby)
 
+;;
 ;; Treemacs config
+;;
 (use-package! treemacs
   :ensure t
   :defer t
   :config
   (progn
     (setq treemacs-width 40)
-    (treemacs-follow-mode t))
-  :bind
-  (:map global-map
-        ("C-c o s" . treemacs-select-window)))
+    (treemacs-follow-mode t)))
+
+(after! treemacs
+  (evil-define-key* 'normal 'global
+    (kbd "SPC o s") 'treemacs-select-window))
 
 ;; Ace Jump Mode
 (autoload
@@ -101,8 +123,6 @@
   "ace-jump-mode"
   "Emacs quick move minor mode"
   t)
-(define-key global-map (kbd "C-c SPC") 'ace-jump-mode)
-;; enable a more powerful jump back function from ace jump mode
 (autoload
   'ace-jump-mode-pop-mark
   "ace-jump-mode"
@@ -110,7 +130,9 @@
   t)
 (eval-after-load "ace-jump-mode"
   '(ace-jump-mode-enable-mark-sync))
-(define-key global-map (kbd "C-x SPC") 'ace-jump-mode-pop-mark)
+(evil-define-key* 'normal 'global
+    (kbd "SPC s c") 'ace-jump-mode
+    (kbd "SPC s C") 'ace-jump-mode-pop-mark)
 
 ;;Exit insert mode by pressing j and then j quickly
 ;;o
@@ -119,6 +141,32 @@
 (key-chord-define evil-insert-state-map "jj" 'evil-normal-state)
 (key-chord-mode 1)
 
+;;
 ;; Disable evil-snipe (I want vim 's' behaviour)
+;;
 (evil-snipe-mode 0)
 (evil-snipe-override-mode 0)
+
+;;
+;; Recent files buffer configuration
+;;
+(use-package! switch-buffer-functions
+  :after recentf
+  :preface
+  (defun my-recentf-track-visited-file (_prev _curr)
+    (and buffer-file-name
+         (recentf-add-file buffer-file-name)))
+  :init
+  (add-hook 'switch-buffer-functions #'my-recentf-track-visited-file))
+
+;;Search config "C-s" - to use swiper
+(map! "C-s" #'+default/search-buffer)
+
+;; Reformat buffer
+(defun zz/org-reformat-buffer ()
+  (interactive)
+  (when (y-or-n-p "Really format current buffer? ")
+    (let ((document (org-element-interpret-data (org-element-parse-buffer))))
+      (erase-buffer)
+      (insert document)
+      (goto-char (point-min)))))
