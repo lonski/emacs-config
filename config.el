@@ -63,6 +63,8 @@
 ;;
 (evil-define-key* 'normal 'global
   (kbd "C-/") 'comment-line)
+(evil-define-key* 'normal 'global
+  (kbd "SPC p w") '+workspace/cycle)
 
 ;;
 ;; Org config
@@ -78,12 +80,18 @@
         '(("t" "Todo" entry (file+headline (lambda ()(concat org-directory "/todo.org")) "Tasks")
            "* TODO %?\n  %i\n  %a", :prepend t)
           ("n" "Note" entry (file (lambda ()(concat org-directory "/notes.org")))
-           "* %?"))))
-
-;;
-;; Use rvm for rspec
-;;
-(setq rspec-use-rvm t)
+           "*  %?")
+          ("w" "Work note" entry (file (lambda ()(concat org-directory "/work-notes.org")))
+           "*  %?")
+          ("j" "Journal" entry (file (lambda ()(concat org-directory "/journal.org")))
+           "* %<%d %B %Y> %?"))))
+(defun org-archive-done-todo-tasks ()
+  (interactive)
+  (org-map-entries
+   (lambda ()
+     (org-archive-subtree)
+     (setq org-map-continue-from (org-element-property :begin (org-element-at-point))))
+   "/DONE" 'tree))
 
 ;;
 ;; Configure Centaur Tabs
@@ -104,6 +112,12 @@
     (kbd "C-x 9") 'centaur-tabs--kill-this-buffer-dont-ask))
 
 ;;
+;;Ruby
+;;
+
+;; Use rvm for rspec
+(setq rspec-use-rvm t)
+
 ;; Robe - ruby completion server
 ;; Activate ruby using rvm, before starting the server
 (advice-add 'inf-ruby-console-auto :before #'rvm-activate-corresponding-ruby)
@@ -112,6 +126,18 @@
         (evil-define-key* 'normal ruby-mode-map
           (kbd "SPC v s") 'rspec-verify-single
           (kbd "SPC v a") 'rspec-verify-all)))
+
+;; Clean cube test database
+(defun cube-reset-test-db ()
+  "Recreates cube test database"
+  (interactive)
+  (async-shell-command
+   ;; command and parameters
+   "RAILS_ENV=test rake db:drop || RAILS_ENV=test rake db:create && RAILS_ENV=test rake db:migrate && RAILS_ENV=test rake db:seed"
+   ;; name of the error buffer
+   "*Cube clean test db*"
+   ;; show error buffer?
+   t))
 
 ;;
 ;; Treemacs config
